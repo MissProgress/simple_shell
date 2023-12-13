@@ -7,8 +7,8 @@
  */
 int main(void)
 {
-    printf("Betty would be proud!\n");
+	printf("Betty would be proud!\n");
 
-    return 0;
+	return (0);
 }
 
