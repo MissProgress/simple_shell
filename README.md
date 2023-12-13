@@ -1,1 +1,1 @@
-Sumple Shell
+Simple Shell
