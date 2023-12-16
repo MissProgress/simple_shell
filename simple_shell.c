@@ -24,6 +24,12 @@ int main(void) {
         // Remove the newline character from the command
         command[strcspn(command, "\n")] = '\0';
 
+        // Check if the command is "exit"
+        if (strcmp(command, "exit") == 0) {
+            printf("Exiting the shell.\n");
+            exit(0);
+        }
+
         // Fork a new process
         pid_t pid = fork();
 
