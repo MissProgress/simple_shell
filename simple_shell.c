@@ -2,10 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 #define MAX_COMMAND_LENGTH 100
 
-int main() {
+int main(void) {
     char command[MAX_COMMAND_LENGTH];
 
     while (1) {
@@ -22,10 +24,23 @@ int main() {
         // Remove the newline character from the command
         command[strcspn(command, "\n")] = '\0';
 
-        // Execute the command using execve
-        if (execlp(command, command, (char *)NULL) == -1) {
-            // Handle command not found
-            printf("./shell: No such file or directory\n");
+        // Fork a new process
+        pid_t pid = fork();
+
+        if (pid == -1) {
+            perror("Fork error");
+            exit(EXIT_FAILURE);
+        }
+
+        if (pid == 0) {
+            // Child process
+            if (execve(command, (char *[]){command, NULL}, NULL) == -1) {
+                perror("Execve error");
+                exit(EXIT_FAILURE);
+            }
+        } else {
+            // Parent process
+            waitpid(pid, NULL, 0);
         }
     }
 
