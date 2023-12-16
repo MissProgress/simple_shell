@@ -1,54 +1,73 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <string.h>
 
-#define MAX_COMMAND_LENGTH 100
+#define BUFFER_SIZE 1024
+
+/**
+ * Function to display the shell prompt
+ */
+void displayPrompt() {
+    printf("#cisfun$ ");
+}
+
+/**
+ * Function to read a line of input from the user
+ */
+char *readLine() {
+    char *buffer = NULL;
+    size_t bufferSize = 0;
+    getline(&buffer, &bufferSize, stdin);
+    return buffer;
+}
+
+/**
+ * Function to execute a command entered by the user
+ */
+void executeCommand(char *command) {
+    pid_t pid, wpid;
+    int status;
+
+    pid = fork();
+    if (pid == 0) {
+        // Child process
+        if (execlp(command, command, (char *)NULL) == -1) {
+            perror("shell");
+        }
+        exit(EXIT_FAILURE);
+    } else if (pid < 0) {
+        perror("shell");
+    } else {
+        // Parent process
+        do {
+            wpid = waitpid(pid, &status, WUNTRACED);
+        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+    }
+}
 
 int main(void) {
-    char command[MAX_COMMAND_LENGTH];
+    char *command;
 
-    while (1) {
-        // Display the prompt
-        printf("#cisfun$ ");
+    do {
+        displayPrompt();
+        command = readLine();
 
-        // Read the command from the user
-        if (fgets(command, sizeof(command), stdin) == NULL) {
-            // Handle "end of file" condition (Ctrl+D)
-            printf("Exiting the shell.\n");
-            exit(0);
-        }
-
-        // Remove the newline character from the command
+        // Remove the trailing newline character
         command[strcspn(command, "\n")] = '\0';
 
-        // Check if the command is "exit"
         if (strcmp(command, "exit") == 0) {
-            printf("Exiting the shell.\n");
-            exit(0);
+            // Exit the shell if the user enters "exit"
+            free(command);
+            exit(EXIT_SUCCESS);
         }
 
-        // Fork a new process
-        pid_t pid = fork();
+        executeCommand(command);
 
-        if (pid == -1) {
-            perror("Fork error");
-            exit(EXIT_FAILURE);
-        }
-
-        if (pid == 0) {
-            // Child process
-            if (execve(command, (char *[]){command, NULL}, NULL) == -1) {
-                perror("Execve error");
-                exit(EXIT_FAILURE);
-            }
-        } else {
-            // Parent process
-            waitpid(pid, NULL, 0);
-        }
-    }
+        free(command);
+    } while (1);
 
     return 0;
 }
